@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { useActionState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 
 export default function MessageForm() {
   const [state, action, pending] = useActionState(sendMessageToTelegram, undefined)
@@ -29,8 +30,8 @@ export default function MessageForm() {
               <Textarea
                 placeholder="Your message"
                 name="message"
-                required
               />
+              <Input type="file" name="files" multiple />
               <Button disabled={pending} type="submit" className="w-full">
                 Send Message
               </Button>
