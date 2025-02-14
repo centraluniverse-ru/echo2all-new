@@ -111,6 +111,7 @@ bot.on(message(), async (ctx: TelegrafContext) => {
         }`
       );
     }
+    await ctx.sendMessage("@cue2a")
   }
 });
 
