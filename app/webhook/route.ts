@@ -6,10 +6,7 @@ import { type NextRequest } from "next/server";
 
 const bot = new Telegraf<TelegrafContext>(process.env.BOT_TOKEN as string);
 
-
 const CHAT_ID = process.env.CHAT_ID as string;
-
-
 
 bot.on(message(), async (ctx: TelegrafContext) => {
   if (ctx.message) {
@@ -97,6 +94,9 @@ bot.on(message(), async (ctx: TelegrafContext) => {
         );
       }
     } else {
+      if (((ctx.message as Message.TextMessage).text ?? "") == "/start") {
+        return;
+      }
       const sentMessage = await ctx.telegram.copyMessage(
         CHAT_ID,
         ctx.message.chat.id,
