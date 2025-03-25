@@ -1,125 +1,59 @@
-import { Telegraf, Context as TelegrafContext } from "telegraf";
+import {Context as TelegrafContext, Telegraf} from "telegraf";
 
-import { message } from "telegraf/filters";
-import { Message } from "telegraf/types";
-import { type NextRequest } from "next/server";
+import {message} from "telegraf/filters";
+import {type NextRequest} from "next/server";
 
 const bot = new Telegraf<TelegrafContext>(process.env.BOT_TOKEN as string);
-
 const CHAT_ID = process.env.CHAT_ID as string;
 
-bot.on(message(), async (ctx: TelegrafContext) => {
-  if (ctx.message) {
-    if ("sticker" in ctx.message) {
-      await ctx.telegram.copyMessage(
-        CHAT_ID,
-        ctx.message.chat.id,
-        ctx.message.message_id
-      );
-    } else if ("voice" in ctx.message) {
-      const sentMessage = await ctx.telegram.copyMessage(
-        CHAT_ID,
-        ctx.message.chat.id,
-        ctx.message.message_id
-      );
-      await ctx.telegram.editMessageCaption(
-        CHAT_ID,
-        sentMessage.message_id,
-        undefined,
-        `cue2a_${sentMessage.message_id}\n${ctx.message.caption || ""}`
-      );
-    } else if ("video_note" in ctx.message) {
-      await ctx.telegram.copyMessage(
-        CHAT_ID,
-        ctx.message.chat.id,
-        ctx.message.message_id
-      );
-    } else if ("media_group" in ctx) {
-      console.log("MEDIA_GROUP");
-    } else if (
-      "photo" in ctx.message ||
-      "video" in ctx.message ||
-      "document" in ctx.message ||
-      "audio" in ctx.message
-    ) {
-      const message = ctx.message as
-        | Message.PhotoMessage
-        | Message.VideoMessage
-        | Message.DocumentMessage
-        | Message.AudioMessage;
-      let sentMessage: Message | undefined;
-
-      if ("photo" in message) {
-        sentMessage = await ctx.telegram.sendPhoto(
-          CHAT_ID,
-          message.photo[message.photo.length - 1].file_id,
-          {
-            caption: message.caption,
-          }
-        );
-      } else if ("video" in message) {
-        sentMessage = await ctx.telegram.sendVideo(
-          CHAT_ID,
-          message.video.file_id,
-          {
-            caption: message.caption,
-          }
-        );
-      } else if ("document" in message) {
-        sentMessage = await ctx.telegram.sendDocument(
-          CHAT_ID,
-          message.document.file_id,
-          {
-            caption: message.caption,
-          }
-        );
-      } else if ("audio" in message) {
-        sentMessage = await ctx.telegram.sendAudio(
-          CHAT_ID,
-          message.audio.file_id,
-          {
-            caption: message.caption,
-          }
-        );
-      }
-      if (sentMessage && "message_id" in sentMessage) {
-        const newCaption = `cue2a_${sentMessage.message_id}\n${
-          message.caption || ""
-        }`;
-        await ctx.telegram.editMessageCaption(
-          CHAT_ID,
-          sentMessage.message_id,
-          undefined,
-          newCaption
-        );
-      }
-    } else {
-      if (((ctx.message as Message.TextMessage).text ?? "") == "/start") {
-        return;
-      }
-      const sentMessage = await ctx.telegram.copyMessage(
-        CHAT_ID,
-        ctx.message.chat.id,
-        ctx.message.message_id
-      );
-      await ctx.telegram.editMessageText(
-        CHAT_ID,
-        sentMessage.message_id,
-        undefined,
-        `cue2a_${sentMessage.message_id}\n${
-          (ctx.message as Message.TextMessage).text ?? ""
-        }`
-      );
+bot.on("message", async (ctx: TelegrafContext) => {
+    if (ctx.message) {
+        if (ctx.has(message("poll"))) {
+            await ctx.copyMessage(CHAT_ID);
+        }
+        if (ctx.has(message("sticker"))) {
+            await ctx.copyMessage(CHAT_ID);
+        }
+        if (ctx.has(message("voice"))) {
+            const sentMessage = await ctx.copyMessage(CHAT_ID);
+            await ctx.telegram.editMessageCaption(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${ctx.message.caption || ""}`);
+        }
+        if (ctx.has(message("animation"))) {
+            const sentMessage = await ctx.copyMessage(CHAT_ID);
+            await ctx.telegram.editMessageCaption(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${ctx.message.caption || ""}`);
+        }
+        if (ctx.has(message("document"))) {
+            const sentMessage = await ctx.copyMessage(CHAT_ID);
+            await ctx.telegram.editMessageCaption(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${ctx.message.caption || ""}`);
+        }
+        if (ctx.has(message("video_note"))) {
+            await ctx.copyMessage(CHAT_ID);
+        }
+        if (ctx.has(message("photo"))) {
+            const sentMessage = await ctx.copyMessage(CHAT_ID);
+            await ctx.telegram.editMessageCaption(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${ctx.message.caption || ""}`);
+        }
+        if (ctx.has(message("video"))) {
+            const sentMessage = await ctx.copyMessage(CHAT_ID);
+            await ctx.telegram.editMessageCaption(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${ctx.message.caption || ""}`);
+        }
+        if (ctx.has(message("text"))) {
+            if (ctx.text == "/start") {
+                await ctx.reply("Я отправлю твое сообщение в @cue2a")
+                return
+            }
+            const sentMessage = await ctx.telegram.copyMessage(CHAT_ID, ctx.message.chat.id, ctx.message.message_id);
+            await ctx.telegram.editMessageText(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${(ctx.message as Message.TextMessage).text ?? ""}`);
+        }
+        await ctx.reply("@cue2a")
     }
-    await ctx.sendMessage("@cue2a")
-  }
 });
 
 export async function POST(req: NextRequest) {
-  try {
-    await bot.handleUpdate(await req.json());
-  } catch (error) {
-    console.error("Error handling update:", error);
-  }
-  return new Response("OK", { status: 200 });
+    try {
+        await bot.handleUpdate(await req.json());
+    } catch (error) {
+        console.error("Error handling update:", error);
+    }
+    return new Response("OK", {status: 200});
 }
