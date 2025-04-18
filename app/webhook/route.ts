@@ -45,7 +45,7 @@ bot.on("message", async (ctx: TelegrafContext) => {
             const sentMessage = await ctx.telegram.copyMessage(CHAT_ID, ctx.message.chat.id, ctx.message.message_id);
             await ctx.telegram.editMessageText(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${(ctx.message as Message.TextMessage).text ?? ""}`);
         }
-        await ctx.reply("@cue2a_flood")
+        await ctx.reply("@cue2a")
     }
 });
 
