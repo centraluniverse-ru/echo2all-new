@@ -43,7 +43,11 @@ bot.on("message", async (ctx: TelegrafContext) => {
                 return
             }
             const sentMessage = await ctx.telegram.copyMessage(CHAT_ID, ctx.message.chat.id, ctx.message.message_id);
-            await ctx.telegram.editMessageText(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${(ctx.message as Message.TextMessage).text ?? ""}`);
+            const id_text = `cue2a_${sentMessage.message_id}\n`;
+            ctx.message.entities?.forEach(ent => ent.offset = ent.offset + id_text.length);
+            await ctx.telegram.editMessageText(CHAT_ID, sentMessage.message_id, undefined, `${id_text}${(ctx.message as Message.TextMessage).text ?? ""}`, {
+                entities: ctx.message.entities,
+            });
         }
         await ctx.reply("@cue2a")
     }
