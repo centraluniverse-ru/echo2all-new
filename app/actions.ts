@@ -42,7 +42,7 @@ export async function sendMessageToTelegram(_: unknown, form: FormData, token: u
             try {
                 reply_id = parseInt(message.split(" ", 1)[0].replace("cue2a_", ""));
                 message = message.replace(`cue2a_${reply_id}`, "");
-            } catch {
+            } catch (e) {
                 console.log("Error while parsing reply_id");
                 console.error(e);
             }
@@ -62,7 +62,7 @@ export async function sendMessageToTelegram(_: unknown, form: FormData, token: u
                 mediagroup.push({
                     type: file.type.split("/")[0] == "image" ? "photo" : "video", media: {
                         source: Buffer.from(await file.arrayBuffer()), filename: file.name,
-                    }, caption: message,
+                    }, caption: message, parse_mode: "MarkdownV2"
                 });
             }
         } else if (allAudios) {
@@ -70,7 +70,7 @@ export async function sendMessageToTelegram(_: unknown, form: FormData, token: u
                 mediagroup.push({
                     type: file.type.split("/")[0], media: {
                         source: Buffer.from(await file.arrayBuffer()), filename: file.name,
-                    }, caption: message,
+                    }, caption: message, parse_mode: "MarkdownV2"
                 });
             }
         } else {
@@ -78,25 +78,34 @@ export async function sendMessageToTelegram(_: unknown, form: FormData, token: u
                 mediagroup.push({
                     type: "document", media: {
                         source: Buffer.from(await file.arrayBuffer()), filename: file.name,
-                    }, caption: message,
+                    }, caption: message, parse_mode: "MarkdownV2"
                 });
             }
         }
         try {
             const sentMessage = await tg.telegram.sendMediaGroup(CHAT_ID, mediagroup as | (InputMediaPhoto | InputMediaVideo)[] | InputMediaVideo[] | InputMediaDocument[], {reply_parameters: reply_id ? {message_id: reply_id} : undefined});
-            await tg.telegram.editMessageCaption(sentMessage[0].chat.id, sentMessage[0].message_id, undefined, `cue2a_${sentMessage[0].message_id}\n${sentMessage[0].caption ?? ""}`);
+            const id_text = `cue2a_${sentMessage[0].message_id}\n`;
+            sentMessage[0].caption_entities?.forEach(ent => ent.offset += id_text.length);
+            await tg.telegram.editMessageCaption(sentMessage[0].chat.id, sentMessage[0].message_id, undefined, `${id_text}${sentMessage[0].caption ?? ""}`, {
+                caption_entities: sentMessage[0].caption_entities
+            });
             return {ok: true, message: "success"};
         } catch {
-            return {ok: false, message: "Ошибка при отпрвке сообщения"}
+            return {ok: false, message: "Ошибка при отправке сообщения"}
         }
 
     }
 
     const sentMessage = await tg.telegram.sendMessage(CHAT_ID, message ?? "", {
         reply_parameters: reply_id ? {message_id: reply_id} : undefined,
+        parse_mode: "MarkdownV2"
     });
     if (sentMessage) {
-        await tg.telegram.editMessageText(CHAT_ID, sentMessage.message_id, undefined, `cue2a_${sentMessage.message_id}\n${sentMessage.text}`);
+        const id_text = `cue2a_${sentMessage.message_id}\n`;
+        sentMessage.entities?.forEach(ent => ent.offset += id_text.length);
+        await tg.telegram.editMessageText(CHAT_ID, sentMessage.message_id, undefined, `${id_text}${sentMessage.text}`, {
+            entities: sentMessage.entities,
+        });
         return {ok: true, message: "Отправлено успешно"};
     }
 
